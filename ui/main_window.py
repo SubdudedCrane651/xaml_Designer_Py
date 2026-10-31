@@ -257,15 +257,6 @@ class MainWindow(QMainWindow):
         self.scene.clear()
 
         for control in self.controls:
-
-            item = (
-                self.scene.add_control(
-                    control
-                )
-            )
-
-            item.selected_item.connect(
-                self.property_editor.set_control
-            )
+          self.scene.add_control(control)
 
         self.refresh_xaml()
