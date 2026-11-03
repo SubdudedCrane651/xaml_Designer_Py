@@ -1,5 +1,7 @@
 from PyQt6.QtCore import Qt
+
 from PyQt6.QtGui import QAction
+
 from PyQt6.QtWidgets import (
     QFileDialog,
     QDockWidget,
@@ -12,7 +14,17 @@ from canvas.designer_scene import (
     DesignerScene
 )
 
-from models.control import Control
+from models.control import (
+    Control
+)
+
+from ui.toolbox import (
+    ToolBox
+)
+
+from ui.property_editor import (
+    PropertyEditor
+)
 
 from services.serializer import (
     save_project,
@@ -23,59 +35,45 @@ from services.xaml_generator import (
     generate_xaml
 )
 
-from ui.toolbox import ToolBox
-from ui.property_editor import (
-    PropertyEditor
-)
-
 
 class MainWindow(QMainWindow):
 
     def __init__(self):
-
         super().__init__()
 
-        self.controls = []
-
         self.setWindowTitle(
-            "MAUI Designer"
+            "XAML Designer V2"
         )
 
         self.resize(
-            1400,
+            1600,
             900
         )
 
-        self.scene = (
-            DesignerScene()
-        )
+        self.controls = []
 
-        self.view = (
-            QGraphicsView(
-                self.scene
-            )
+        #
+        # Scene
+        #
+
+        self.scene = DesignerScene()
+
+        self.view = QGraphicsView(
+            self.scene
         )
 
         self.setCentralWidget(
             self.view
         )
 
-        self.build_ui()
-
-        self.refresh_xaml()
-
-    def build_ui(self):
+        #
+        # Toolbox
+        #
 
         self.toolbox = ToolBox()
 
-        self.toolbox.itemDoubleClicked.connect(
-            self.add_control
-        )
-
-        toolbox_dock = (
-            QDockWidget(
-                "Toolbox"
-            )
+        toolbox_dock = QDockWidget(
+            "Toolbox"
         )
 
         toolbox_dock.setWidget(
@@ -87,35 +85,39 @@ class MainWindow(QMainWindow):
             toolbox_dock
         )
 
+        #
+        # Property Editor
+        #
+
         self.property_editor = (
             PropertyEditor()
         )
 
-        prop_dock = (
-            QDockWidget(
-                "Properties"
-            )
+        property_dock = QDockWidget(
+            "Properties"
         )
 
-        prop_dock.setWidget(
+        property_dock.setWidget(
             self.property_editor
         )
 
         self.addDockWidget(
             Qt.DockWidgetArea.RightDockWidgetArea,
-            prop_dock
+            property_dock
         )
 
-        self.xaml_preview = (
-            QTextEdit()
-        )
+        #
+        # XAML Preview
+        #
+
+        self.xaml_preview = QTextEdit()
 
         self.xaml_preview.setReadOnly(
             True
         )
 
         xaml_dock = QDockWidget(
-            "XAML"
+            "XAML Preview"
         )
 
         xaml_dock.setWidget(
@@ -127,14 +129,42 @@ class MainWindow(QMainWindow):
             xaml_dock
         )
 
+        #
+        # Menu
+        #
+
         self.create_menu()
+
+        #
+        # Wiring
+        #
+
+        self.toolbox.itemDoubleClicked.connect(
+            self.add_control
+        )
+
+        self.scene.control_selected.connect(
+            self.property_editor.load_control
+        )
+
+        self.property_editor.control_changed.connect(
+            self.control_modified
+        )
+
+        self.scene.canvas_changed.connect(
+            self.refresh_xaml
+        )
+
+        self.refresh_xaml()
+
+    #
+    # Menu
+    #
 
     def create_menu(self):
 
-        file_menu = (
-            self.menuBar().addMenu(
-                "File"
-            )
+        file_menu = self.menuBar().addMenu(
+            "File"
         )
 
         new_action = QAction(
@@ -176,17 +206,21 @@ class MainWindow(QMainWindow):
             save_action
         )
 
+    #
+    # Add Control
+    #
+
     def add_control(self, item):
 
         control_type = item.text()
 
-        count = len(
-            self.controls
-        ) + 1
+        index = (
+            len(self.controls) + 1
+        )
 
         control = Control(
             control_type=control_type,
-            name=f"{control_type}{count}",
+            name=f"{control_type}{index}",
             text=control_type,
             x=100,
             y=100
@@ -196,9 +230,30 @@ class MainWindow(QMainWindow):
             control
         )
 
-        self.scene.add_control(control)
+        self.scene.add_control(
+            control
+        )
 
         self.refresh_xaml()
+
+    #
+    # Property Changes
+    #
+
+    def control_modified(
+        self,
+        control
+    ):
+
+        self.scene.refresh_control(
+            control
+        )
+
+        self.refresh_xaml()
+
+    #
+    # XAML
+    #
 
     def refresh_xaml(self):
 
@@ -208,13 +263,21 @@ class MainWindow(QMainWindow):
             )
         )
 
+    #
+    # New
+    #
+
     def new_project(self):
 
         self.controls.clear()
 
-        self.scene.clear()
+        self.scene.clear_controls()
 
         self.refresh_xaml()
+
+    #
+    # Save
+    #
 
     def save_project(self):
 
@@ -227,12 +290,17 @@ class MainWindow(QMainWindow):
             )
         )
 
-        if filename:
+        if not filename:
+            return
 
-            save_project(
-                filename,
-                self.controls
-            )
+        save_project(
+            filename,
+            self.controls
+        )
+
+    #
+    # Open
+    #
 
     def open_project(self):
 
@@ -254,9 +322,12 @@ class MainWindow(QMainWindow):
             )
         )
 
-        self.scene.clear()
+        self.scene.clear_controls()
 
         for control in self.controls:
-          self.scene.add_control(control)
+
+            self.scene.add_control(
+                control
+            )
 
         self.refresh_xaml()

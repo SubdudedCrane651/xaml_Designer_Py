@@ -2,6 +2,7 @@ from PyQt6.QtCore import (
     QRectF,
     Qt
 )
+
 from PyQt6.QtGui import (
     QColor,
     QBrush,
@@ -9,6 +10,7 @@ from PyQt6.QtGui import (
     QPainter,
     QFont
 )
+
 from PyQt6.QtWidgets import (
     QGraphicsObject
 )
@@ -22,8 +24,8 @@ class DesignerItem(QGraphicsObject):
         self.control = control
 
         self.setPos(
-            control.x,
-            control.y
+            getattr(control, "x", 100),
+            getattr(control, "y", 100)
         )
 
         self.setFlags(
@@ -36,13 +38,21 @@ class DesignerItem(QGraphicsObject):
         return QRectF(
             0,
             0,
-            self.control.width,
-            self.control.height
+            getattr(
+                self.control,
+                "width",
+                120
+            ),
+            getattr(
+                self.control,
+                "height",
+                40
+            )
         )
 
     def paint(
         self,
-        painter: QPainter,
+        painter,
         option,
         widget
     ):
@@ -50,11 +60,66 @@ class DesignerItem(QGraphicsObject):
         rect = self.boundingRect()
 
         #
+        # Safe property retrieval
+        #
+
+        background_color = getattr(
+            self.control,
+            "background_color",
+            "#E8E8E8"
+        )
+
+        foreground_color = getattr(
+            self.control,
+            "foreground_color",
+            "#000000"
+        )
+
+        border_color = getattr(
+            self.control,
+            "border_color",
+            "#808080"
+        )
+
+        border_width = getattr(
+            self.control,
+            "border_width",
+            1
+        )
+
+        border_radius = getattr(
+            self.control,
+            "border_radius",
+            5
+        )
+
+        shadow = getattr(
+            self.control,
+            "shadow",
+            False
+        )
+
+        control_type = getattr(
+            self.control,
+            "control_type",
+            "Button"
+        )
+
+        text = getattr(
+            self.control,
+            "text",
+            control_type
+        )
+
+        #
         # Shadow
         #
-        if getattr(self.control, "shadow", False):
 
-            painter.setPen(QPen(Qt.PenStyle.NoPen))
+        if shadow:
+
+            painter.setPen(
+                Qt.PenStyle.NoPen
+            )
 
             painter.setBrush(
                 QColor(
@@ -72,52 +137,48 @@ class DesignerItem(QGraphicsObject):
                     4,
                     4
                 ),
-                self.control.border_radius,
-                self.control.border_radius
+                border_radius,
+                border_radius
             )
 
         #
-        # Main body
+        # Base appearance
         #
 
         painter.setPen(
             QPen(
-                QColor(
-                    self.control.border_color
-                ),
-                self.control.border_width
+                QColor(border_color),
+                border_width
             )
         )
 
         painter.setBrush(
             QBrush(
                 QColor(
-                    self.control.background_color
+                    background_color
                 )
             )
         )
 
         #
-        # Frame/Border/Button/etc
+        # Main shape
         #
 
         painter.drawRoundedRect(
             rect,
-            self.control.border_radius,
-            self.control.border_radius
+            border_radius,
+            border_radius
         )
 
         #
-        # Selection glow
+        # Selection border
         #
 
         if self.isSelected():
 
             painter.setPen(
                 QPen(
-                    QColor(
-                        "#2196F3"
-                    ),
+                    QColor("#2196F3"),
                     2
                 )
             )
@@ -126,159 +187,134 @@ class DesignerItem(QGraphicsObject):
                 Qt.BrushStyle.NoBrush
             )
 
-            painter.drawRect(
-                rect
-            )
+            painter.drawRect(rect)
 
         #
-        # Render control content
+        # Text
         #
 
         font = QFont()
-
         font.setPointSize(10)
 
         painter.setFont(font)
 
         painter.setPen(
             QColor(
-                self.control.foreground_color
+                foreground_color
             )
         )
 
-        control_type = (
-            self.control.control_type
-        )
-
         #
-        # LABEL
+        # Label
         #
 
         if control_type == "Label":
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignLeft |
-                    Qt.AlignmentFlag.AlignVCenter
-                ),
-                self.control.text
+                Qt.AlignmentFlag.AlignLeft |
+                Qt.AlignmentFlag.AlignVCenter,
+                text
             )
 
         #
-        # BUTTON
+        # Button
         #
 
         elif control_type == "Button":
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignCenter
-                ),
-                self.control.text
+                Qt.AlignmentFlag.AlignCenter,
+                text
             )
 
         #
-        # ENTRY
+        # Entry
         #
 
         elif control_type == "Entry":
 
-            inset = rect.adjusted(
-                4,
-                4,
-                -4,
-                -4
-            )
-
             painter.drawText(
-                inset,
-                int(
-                    Qt.AlignmentFlag.AlignLeft |
-                    Qt.AlignmentFlag.AlignVCenter
+                rect.adjusted(
+                    5,
+                    0,
+                    -5,
+                    0
                 ),
-                self.control.text
+                Qt.AlignmentFlag.AlignLeft |
+                Qt.AlignmentFlag.AlignVCenter,
+                text
             )
 
         #
-        # FRAME
+        # Frame
         #
 
         elif control_type == "Frame":
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignCenter
-                ),
+                Qt.AlignmentFlag.AlignCenter,
                 "Frame"
             )
 
         #
-        # BORDER
+        # Border
         #
 
         elif control_type == "Border":
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignCenter
-                ),
+                Qt.AlignmentFlag.AlignCenter,
                 "Border"
             )
 
         #
-        # IMAGE
+        # Image
         #
 
         elif control_type == "Image":
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignCenter
-                ),
+                Qt.AlignmentFlag.AlignCenter,
                 "Image"
             )
 
         #
-        # CHECKBOX
+        # CheckBox
         #
 
         elif control_type == "CheckBox":
 
-            box = QRectF(
-                5,
-                (rect.height() / 2) - 8,
+            painter.drawRect(
+                8,
+                int(rect.height() / 2) - 8,
                 16,
                 16
             )
 
-            painter.drawRect(box)
-
             painter.drawText(
                 QRectF(
-                    26,
+                    30,
                     0,
                     rect.width(),
                     rect.height()
                 ),
-                int(
-                    Qt.AlignmentFlag.AlignVCenter
-                ),
-                self.control.text
+                Qt.AlignmentFlag.AlignVCenter,
+                text
             )
 
         #
-        # SWITCH
+        # Switch
         #
 
         elif control_type == "Switch":
 
             painter.drawRoundedRect(
-                5,
+                8,
                 8,
                 40,
                 20,
@@ -287,7 +323,7 @@ class DesignerItem(QGraphicsObject):
             )
 
             painter.drawEllipse(
-                7,
+                10,
                 10,
                 16,
                 16
@@ -295,28 +331,24 @@ class DesignerItem(QGraphicsObject):
 
             painter.drawText(
                 QRectF(
-                    50,
+                    60,
                     0,
                     rect.width(),
                     rect.height()
                 ),
-                int(
-                    Qt.AlignmentFlag.AlignVCenter
-                ),
-                self.control.text
+                Qt.AlignmentFlag.AlignVCenter,
+                text
             )
 
         #
-        # DEFAULT
+        # Default
         #
 
         else:
 
             painter.drawText(
                 rect,
-                int(
-                    Qt.AlignmentFlag.AlignCenter
-                ),
+                Qt.AlignmentFlag.AlignCenter,
                 control_type
             )
 
@@ -325,9 +357,17 @@ class DesignerItem(QGraphicsObject):
         event
     ):
 
-        self.control.x = self.pos().x()
+        if hasattr(
+            self.control,
+            "x"
+        ):
+            self.control.x = self.pos().x()
 
-        self.control.y = self.pos().y()
+        if hasattr(
+            self.control,
+            "y"
+        ):
+            self.control.y = self.pos().y()
 
         super().mouseReleaseEvent(
             event
@@ -338,8 +378,16 @@ class DesignerItem(QGraphicsObject):
         self.prepareGeometryChange()
 
         self.setPos(
-            self.control.x,
-            self.control.y
+            getattr(
+                self.control,
+                "x",
+                100
+            ),
+            getattr(
+                self.control,
+                "y",
+                100
+            )
         )
 
         self.update()

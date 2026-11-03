@@ -181,6 +181,17 @@ class PropertyEditor(QWidget):
             self.choose_border
         )
 
+    def control_modified(self, control):
+
+        print(
+            control.name,
+            control.text
+        )
+
+        self.scene.refresh_control(control)
+
+        self.refresh_xaml()        
+
     def load_control(
         self,
         control
