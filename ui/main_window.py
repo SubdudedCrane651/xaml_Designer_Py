@@ -1,21 +1,18 @@
 from PyQt6.QtCore import Qt
-
 from PyQt6.QtGui import QAction
 
 from PyQt6.QtWidgets import (
-    QFileDialog,
     QDockWidget,
+    QFileDialog,
     QGraphicsView,
     QMainWindow,
     QTextEdit
 )
 
+from models.control import Control
+
 from canvas.designer_scene import (
     DesignerScene
-)
-
-from models.control import (
-    Control
 )
 
 from ui.toolbox import (
@@ -41,6 +38,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.controls = []
+
         self.setWindowTitle(
             "XAML Designer V2"
         )
@@ -50,10 +49,8 @@ class MainWindow(QMainWindow):
             900
         )
 
-        self.controls = []
-
         #
-        # Scene
+        # Scene / View
         #
 
         self.scene = DesignerScene()
@@ -139,7 +136,7 @@ class MainWindow(QMainWindow):
         # Wiring
         #
 
-        self.toolbox.itemDoubleClicked.connect(
+        self.toolbox.itemActivated.connect(
             self.add_control
         )
 
@@ -157,9 +154,9 @@ class MainWindow(QMainWindow):
 
         self.refresh_xaml()
 
-    #
+    # --------------------------------------------------
     # Menu
-    #
+    # --------------------------------------------------
 
     def create_menu(self):
 
@@ -167,63 +164,107 @@ class MainWindow(QMainWindow):
             "File"
         )
 
-        new_action = QAction(
+        action_new = QAction(
             "New",
             self
         )
 
-        open_action = QAction(
+        action_open = QAction(
             "Open",
             self
         )
 
-        save_action = QAction(
+        action_save = QAction(
             "Save",
             self
         )
 
-        new_action.triggered.connect(
+        file_menu.addAction(
+            action_new
+        )
+
+        file_menu.addAction(
+            action_open
+        )
+
+        file_menu.addAction(
+            action_save
+        )
+
+        action_new.triggered.connect(
             self.new_project
         )
 
-        open_action.triggered.connect(
+        action_open.triggered.connect(
             self.open_project
         )
 
-        save_action.triggered.connect(
+        action_save.triggered.connect(
             self.save_project
         )
 
-        file_menu.addAction(
-            new_action
-        )
-
-        file_menu.addAction(
-            open_action
-        )
-
-        file_menu.addAction(
-            save_action
-        )
-
-    #
+    # --------------------------------------------------
     # Add Control
-    #
+    # --------------------------------------------------
 
     def add_control(self, item):
 
         control_type = item.text()
 
+        #
+        # Ignore toolbox headers
+        #
+
+        if control_type.startswith("==="):
+            return
+
         index = (
             len(self.controls) + 1
         )
+
+        width = 120
+        height = 40
+
+        if control_type == "Image":
+            width = 150
+            height = 150
+
+        elif control_type == "Frame":
+            width = 300
+            height = 200
+
+        elif control_type == "Border":
+            width = 300
+            height = 200
+
+        elif control_type == "Grid":
+            width = 350
+            height = 250
+
+        elif control_type == "VerticalStackLayout":
+            width = 300
+            height = 250
+
+        elif control_type == "HorizontalStackLayout":
+            width = 300
+            height = 120
+
+        elif control_type == "ScrollView":
+            width = 350
+            height = 300
+
+        elif control_type == "ContentView":
+            width = 250
+            height = 200
 
         control = Control(
             control_type=control_type,
             name=f"{control_type}{index}",
             text=control_type,
             x=100,
-            y=100
+            y=100,
+            width=width,
+            height=height
         )
 
         self.controls.append(
@@ -236,9 +277,9 @@ class MainWindow(QMainWindow):
 
         self.refresh_xaml()
 
-    #
-    # Property Changes
-    #
+    # --------------------------------------------------
+    # Property Updates
+    # --------------------------------------------------
 
     def control_modified(
         self,
@@ -251,9 +292,9 @@ class MainWindow(QMainWindow):
 
         self.refresh_xaml()
 
-    #
+    # --------------------------------------------------
     # XAML
-    #
+    # --------------------------------------------------
 
     def refresh_xaml(self):
 
@@ -263,9 +304,9 @@ class MainWindow(QMainWindow):
             )
         )
 
-    #
+    # --------------------------------------------------
     # New
-    #
+    # --------------------------------------------------
 
     def new_project(self):
 
@@ -275,9 +316,9 @@ class MainWindow(QMainWindow):
 
         self.refresh_xaml()
 
-    #
+    # --------------------------------------------------
     # Save
-    #
+    # --------------------------------------------------
 
     def save_project(self):
 
@@ -298,9 +339,9 @@ class MainWindow(QMainWindow):
             self.controls
         )
 
-    #
+    # --------------------------------------------------
     # Open
-    #
+    # --------------------------------------------------
 
     def open_project(self):
 

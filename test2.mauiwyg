@@ -1,0 +1,38 @@
+[
+    {
+        "control_type": "Image",
+        "name": "Image1",
+        "text": "Image",
+        "x": 100,
+        "y": 100,
+        "width": 150,
+        "height": 150,
+        "background_color": "#E8E8E8",
+        "foreground_color": "#000000",
+        "border_color": "#808080",
+        "border_width": 1,
+        "border_radius": 5,
+        "shadow": false,
+        "image_path": "",
+        "visible": true,
+        "enabled": true
+    },
+    {
+        "control_type": "Button",
+        "name": "Button2",
+        "text": "test",
+        "x": 234.0,
+        "y": 24.0,
+        "width": 120,
+        "height": 40,
+        "background_color": "#E8E8E8",
+        "foreground_color": "#55aa00",
+        "border_color": "#808080",
+        "border_width": 1,
+        "border_radius": 5,
+        "shadow": false,
+        "image_path": "",
+        "visible": true,
+        "enabled": true
+    }
+]
